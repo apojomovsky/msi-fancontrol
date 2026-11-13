@@ -1,0 +1,31 @@
+#!/bin/bash
+# fanprofile [auto|quiet|balanced|max]  - set fan/power profile (no arg: show status)
+EC=/sys/devices/platform/msi-ec
+PROFILE_FILE=/var/lib/fan-boost/profile
+PROFILES="auto quiet balanced max"
+
+status() {
+    local p; p=$(cat "$PROFILE_FILE" 2>/dev/null); p=${p:-auto}
+    printf 'profile:      %s\n' "$p"
+    printf 'shift_mode:   %s\n' "$(cat $EC/shift_mode 2>/dev/null)"
+    printf 'cooler_boost: %s\n' "$(cat $EC/cooler_boost 2>/dev/null)"
+    printf 'fan_mode:     %s\n' "$(cat $EC/fan_mode 2>/dev/null)"
+    printf 'CPU / GPU:    %s°C / %s°C\n' "$(cat $EC/cpu/realtime_temperature)" "$(cat $EC/gpu/realtime_temperature)"
+    local h; h=$(grep -l msi_wmi_platform /sys/class/hwmon/hwmon*/name 2>/dev/null | head -1)
+    [ -n "$h" ] && printf 'fan:          %s RPM\n' "$(cat "$(dirname "$h")"/fan1_input)"
+    systemctl is-active --quiet fan-boost || echo "WARNING: fan-boost service is not running"
+}
+
+case "$1" in
+    "") status ;;
+    -h|--help) echo "usage: fanprofile [${PROFILES// /|}]"; echo "  auto     boost under load, quiet otherwise (default)"
+               echo "  quiet    eco power, no boost (cooler/slower CPU)"; echo "  balanced comfort, no boost"
+               echo "  max      turbo + cooler boost, always" ;;
+    auto|quiet|balanced|max)
+        if [ "$EUID" -ne 0 ]; then exec sudo "$0" "$@"; fi
+        mkdir -p "$(dirname "$PROFILE_FILE")"
+        echo "$1" > "$PROFILE_FILE"
+        sleep 2.5   # let the service apply it
+        status ;;
+    *) echo "unknown profile '$1' (choose: $PROFILES)" >&2; exit 1 ;;
+esac
