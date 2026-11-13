@@ -8,9 +8,9 @@
 # State is re-asserted every cycle, so resets after suspend/resume are fixed automatically.
 
 EC=/sys/devices/platform/msi-ec
-PROFILE_FILE=/var/lib/fan-boost/profile
+PROFILE_FILE=/var/lib/msi-fancontrol/profile
 
-# Tunables for "auto" (override in /etc/default/fan-boost)
+# Tunables for "auto" (override in /etc/default/msi-fancontrol)
 CPU_HOT=${CPU_HOT:-85}      # boost when CPU >= this (°C)
 GPU_HOT=${GPU_HOT:-75}      # ...or GPU >= this
 CPU_COOL=${CPU_COOL:-70}    # un-boost only when CPU < this
@@ -19,7 +19,7 @@ HOT_SECS=${HOT_SECS:-10}    # must be hot this long before boosting
 COOL_SECS=${COOL_SECS:-60}  # must be cool this long before un-boosting
 INTERVAL=${INTERVAL:-2}
 DRY_RUN=${DRY_RUN:-0}
-[ -r /etc/default/fan-boost ] && . /etc/default/fan-boost
+[ -r /etc/default/msi-fancontrol ] && . /etc/default/msi-fancontrol
 
 log() { echo "$*"; }
 

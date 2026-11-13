@@ -1,11 +1,11 @@
 [Unit]
-Description=Load-aware MSI fan boost (msi-ec)
+Description=MSI laptop fan control (msi-ec)
 After=systemd-modules-load.service
 
 [Service]
 Type=simple
 ExecStartPre=-/sbin/modprobe msi_ec
-ExecStart=/usr/local/bin/fan-boost.sh
+ExecStart=/usr/local/bin/msi-fancontrol.sh
 Restart=always
 RestartSec=5
 

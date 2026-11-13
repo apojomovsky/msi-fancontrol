@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
+[ "$EUID" -eq 0 ] || exec sudo "$0" "$@"
 cd "$(dirname "$0")"
-install -m 755 fan-boost.sh /usr/local/bin/fan-boost.sh
+
+install -m 755 msi-fancontrol.sh /usr/local/bin/msi-fancontrol.sh
 install -m 755 fanprofile /usr/local/bin/fanprofile
-install -m 644 fan-boost.service /etc/systemd/system/fan-boost.service
+install -m 644 msi-fancontrol.service /etc/systemd/system/msi-fancontrol.service
 echo msi_ec > /etc/modules-load.d/msi-ec.conf
-mkdir -p /var/lib/fan-boost
-[ -f /var/lib/fan-boost/profile ] || echo auto > /var/lib/fan-boost/profile
+mkdir -p /var/lib/msi-fancontrol
+[ -f /var/lib/msi-fancontrol/profile ] || echo auto > /var/lib/msi-fancontrol/profile
 systemctl daemon-reload
-systemctl enable fan-boost.service
-systemctl restart fan-boost.service
-systemctl --no-pager status fan-boost.service | head -5
+systemctl enable msi-fancontrol.service
+systemctl restart msi-fancontrol.service
+systemctl --no-pager status msi-fancontrol.service | head -5

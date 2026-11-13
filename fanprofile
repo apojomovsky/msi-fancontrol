@@ -1,7 +1,7 @@
 #!/bin/bash
 # fanprofile [auto|quiet|balanced|max]  - set fan/power profile (no arg: show status)
 EC=/sys/devices/platform/msi-ec
-PROFILE_FILE=/var/lib/fan-boost/profile
+PROFILE_FILE=/var/lib/msi-fancontrol/profile
 PROFILES="auto quiet balanced max"
 
 status() {
@@ -13,7 +13,7 @@ status() {
     printf 'CPU / GPU:    %s°C / %s°C\n' "$(cat $EC/cpu/realtime_temperature)" "$(cat $EC/gpu/realtime_temperature)"
     local h; h=$(grep -l msi_wmi_platform /sys/class/hwmon/hwmon*/name 2>/dev/null | head -1)
     [ -n "$h" ] && printf 'fan:          %s RPM\n' "$(cat "$(dirname "$h")"/fan1_input)"
-    systemctl is-active --quiet fan-boost || echo "WARNING: fan-boost service is not running"
+    systemctl is-active --quiet msi-fancontrol || echo "WARNING: msi-fancontrol service is not running"
 }
 
 case "$1" in

@@ -1,25 +1,46 @@
-# fan-boost
+# msi-fancontrol
 
 Load-aware fan control for MSI laptops on Linux, built on the
 [msi-ec](https://github.com/BeardOverflow/msi-ec) kernel driver.
 
-Many MSI laptops ship with a fan profile tuned for low noise, so they run hot under sustained load
+Many MSI gaming laptops ship with a fan profile tuned for low noise, so they run hot under sustained load
 (simulators, games, compiling). Maxing the fans with **Cooler Boost** fixes the temperatures but
-is loud. fan-boost turns boost on only when the machine is actually hot, and switches it back off
+is loud. msi-fancontrol turns boost on only when the machine is actually hot, and switches it back off
 once things have cooled down.
 
 It also provides a `fanprofile` command to switch between a few fixed profiles.
 
 ## Tested on
 
-| Laptop | EC firmware | OS |
-|---|---|---|
-| MSI Cyborg 15 A13VE | `15K1IMS1.110` | Ubuntu, kernel 7.0 |
+So far this has been tested on **one** machine:
 
-It should work on any laptop that msi-ec supports and that exposes the `comfort`, `eco` and
-`turbo` shift modes plus `cooler_boost`. Check yours with
-`cat /sys/devices/platform/msi-ec/available_shift_modes`. If your model uses different mode names,
-edit the `apply` calls in `fan-boost.sh`.
+| | |
+|---|---|
+| Model | MSI Cyborg 15 A13VE (board MS-15K1) |
+| CPU / GPU | Intel Core i7-13620H / NVIDIA GeForce RTX 4050 Laptop |
+| BIOS | E15K1IMS.10E (2023-09-04) |
+| EC firmware | `15K1IMS1.110` (from `/sys/devices/platform/msi-ec/fw_version`) |
+| OS | Ubuntu 26.04.1 LTS, GNOME 50, kernel 7.0.0-43-generic |
+| Driver | msi-ec 0.18 (DKMS, upstream); the kernel's built-in msi-ec did **not** support this firmware |
+
+### Probably compatible (untested)
+
+- **Same EC firmware family (`15K1IMS1.1xx`):** msi-ec lists this family for the
+  Cyborg 15 A12VF / A13VF(K), and it uses the same register layout. These models should work
+  as-is.
+- **Other msi-ec-supported MSI laptops:** these should work if they expose `cooler_boost` and the
+  shift modes `comfort`, `eco` and `turbo`. Check with:
+
+  ```bash
+  cat /sys/devices/platform/msi-ec/fw_version
+  cat /sys/devices/platform/msi-ec/available_shift_modes
+  ```
+
+  If your model uses other names, for example `sport` instead of `turbo`, edit the `apply` calls in
+  `msi-fancontrol.sh`.
+
+If you try this on another model, please open an issue or PR with your model and `fw_version` so it
+can be added to the list.
 
 ## Profiles
 
@@ -65,20 +86,20 @@ ls /sys/devices/platform/msi-ec/     # should list cooler_boost, shift_mode, fan
 If it fails to load, your firmware may not be supported yet. Check `sudo dmesg | grep msi` and the
 msi-ec project's device support discussions.
 
-### 2. Install fan-boost
+### 2. Install msi-fancontrol
 
 ```bash
-git clone <this repo> fan-boost
-sudo fan-boost/install.sh
+git clone <this repo> msi-fancontrol
+sudo msi-fancontrol/install.sh
 ```
 
 This installs:
 
-- `/usr/local/bin/fan-boost.sh`: the daemon
+- `/usr/local/bin/msi-fancontrol.sh`: the daemon
 - `/usr/local/bin/fanprofile`: the CLI
-- `/etc/systemd/system/fan-boost.service`: enabled at boot
+- `/etc/systemd/system/msi-fancontrol.service`: enabled at boot
 - `/etc/modules-load.d/msi-ec.conf`: loads the driver at boot
-- `/var/lib/fan-boost/profile`: the current profile, initially `auto`
+- `/var/lib/msi-fancontrol/profile`: the current profile, initially `auto`
 
 To update after editing the scripts, run `install.sh` again.
 
@@ -92,14 +113,14 @@ fanprofile balanced
 fanprofile max
 fanprofile --help
 
-journalctl -u fan-boost -f   # watch boost on/off decisions live
+journalctl -u msi-fancontrol -f   # watch boost on/off decisions live
 ```
 
 The selected profile persists across reboots.
 
 ## Tuning
 
-Override any of these in `/etc/default/fan-boost`, then run `sudo systemctl restart fan-boost`:
+Override any of these in `/etc/default/msi-fancontrol`, then run `sudo systemctl restart msi-fancontrol`:
 
 ```bash
 CPU_HOT=85      # boost when CPU >= this (°C)
@@ -111,7 +132,7 @@ COOL_SECS=60    # must be cool this long before un-boosting
 INTERVAL=2      # polling interval (s)
 ```
 
-You can test changes without touching the hardware: `DRY_RUN=1 ./fan-boost.sh` prints what it would
+You can test changes without touching the hardware: `DRY_RUN=1 ./msi-fancontrol.sh` prints what it would
 change instead of writing.
 
 ## Uninstall
@@ -120,7 +141,7 @@ change instead of writing.
 sudo ./uninstall.sh
 ```
 
-This removes fan-boost but leaves the msi-ec driver installed. To remove the driver as well, run
+This removes msi-fancontrol but leaves the msi-ec driver installed. To remove the driver as well, run
 `sudo make dkms-uninstall` in the msi-ec checkout.
 
 ## Notes
@@ -136,3 +157,9 @@ This removes fan-boost but leaves the msi-ec driver installed. To remove the dri
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+---
+
+<sub>Built with the help of AI coding agents. It was reviewed and tested on real hardware (see
+[Tested on](#tested-on)), but it is still a set of scripts that write to your laptop's embedded
+controller, so please read them before running.</sub>
