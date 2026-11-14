@@ -46,7 +46,7 @@ can be added to the list.
 
 | Profile | shift_mode | cooler_boost | Use it for |
 |---|---|---|---|
-| `auto` (default) | `turbo` when hot, `comfort` when cool | on when hot | everyday use |
+| `auto` (default) | `comfort` → `turbo` → `turbo` by temperature | off → off → on | everyday use |
 | `quiet` | `eco` | off | meetings, battery; slower CPU |
 | `balanced` | `comfort` | off | light work, no boost ever |
 | `max` | `turbo` | on | long heavy sessions |
@@ -56,8 +56,16 @@ coming back.
 
 ### How `auto` decides
 
-- **Boost on:** CPU ≥ 85 °C **or** GPU ≥ 75 °C for 10 s.
-- **Boost off:** CPU < 70 °C **and** GPU < 62 °C for 60 s.
+`auto` has three levels, so a brief spike while browsing doesn't send the fans to 100 %:
+
+| Level | State | Step up | Step down |
+|---|---|---|---|
+| 0 | `comfort`, firmware fan curve | CPU ≥ 80 °C **or** GPU ≥ 72 °C for 15 s | n/a |
+| 1 | `turbo`, firmware fan curve (audible, not max) | CPU ≥ 92 °C **or** GPU ≥ 80 °C for 30 s | CPU < 68 °C **and** GPU < 60 °C for 60 s |
+| 2 | `turbo` + `cooler_boost` (fans at 100 %) | n/a | CPU < 86 °C **and** GPU < 74 °C for 30 s |
+
+All values can be overridden in `/etc/default/msi-fancontrol`: `CPU_HOT`, `GPU_HOT`, `CPU_COOL`, `GPU_COOL`,
+`HOT_SECS`, `COOL_SECS`, `CPU_MAX`, `GPU_MAX`, `CPU_MAXCOOL`, `GPU_MAXCOOL`, `MAX_SECS`, `MAXCOOL_SECS`.
 
 The thresholds are far apart on purpose, so the fans don't keep switching between loud and quiet.
 Temperatures come from the embedded controller (`/sys/devices/platform/msi-ec/{cpu,gpu}/realtime_temperature`),
